@@ -1,0 +1,59 @@
+<!doctype>
+<html lang="zh-cn">
+    <head>
+        <title>申诉详情</title>
+        <link rel="stylesheet" href="/stylesheets/style.css">
+    </head>
+    <body>
+        <div class="content">
+            <div class="top">
+                <div class="top-left">
+                    <h2>申诉详情</h2>
+                </div>
+                <div class="top-right">
+                    <a href="/admin"><button type="button">返回主页</button></a>
+                </div>
+            </div>
+            <div class="details">
+                <table>
+                    <tr>
+                        <th>申诉编号：</th>
+                        <td><%= appeal.appealID%></td>
+                        <th>用户编号：</th>
+                        <td><%=appeal.userID%></td>
+                    </tr>
+                    <tr class="apText">
+                        <th>申诉内容：</th>
+                        <td colspan="3">&emsp;<%=appeal.apContent%></td>
+                    </tr>
+                    <tr>
+                            <th>租出者：</th>
+                            <td><%= share.renderName%></td>
+                            <th>信誉：</th>
+                            <td><%=share.renderCredit%></td>
+                    </tr>
+                    <tr>
+                        <th>开始时间：</th>
+                        <td colspan="3"><%=share.beginTime%></td>
+                    </tr>
+                    <tr>
+                            <th>结束时间：</th>
+                            <td colspan="3"><%=share.endTime%></td>
+                    </tr>
+                    <tr>
+                        <th>位置信息：</th>
+                        <td colspan="3"><%=share.position%></td>
+                    </tr>
+                </table>
+                <form action="/appeal/<%= appeal.appealID%>" method="POST" class="apResult">
+                    <p>处理结果：
+                        <input name="apResult" type="radio" value="true" checked="checked">通过
+                        <input name="apResult" type="radio" value="false">不通过<br><br>
+                        <input type="hidden" name="userID" value="<%= appeal.userID%>">
+                        <input type="hidden" name="shareID" value="<%= share.shareID%>">
+                        <input class="submitButton" type="submit" value="提交"></p>    
+                </form>
+            </div>
+        </div>
+    </body>
+</html>

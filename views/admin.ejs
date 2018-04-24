@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-cn">
+    <head>
+        <title>系统管理主页</title>
+        <link rel="stylesheet" href="/stylesheets/style.css">
+    </head>
+    <body>
+        <div class="content">
+            <div class="top">
+                <div class="top-left">
+                    <h2>系统管理</h2>
+                </div>
+                <div class="top-right">
+                    <a href="/CNotice"><button type="button">发布公告</button></a>
+                </div>
+            </div>
+            <div class="appeal-list">
+                <ul>
+                    <% for(var i = 0,max = appeals.length;i<max;i++){%>
+                        <li class="appeal">
+                            <p><span class="appeal-num"><%= i+1%>.</span>
+                                <span class="userID">用户ID：<%= appeals[i].userID %></span>
+                                <span class="apContent">内容：<%= appeals[i].apContent.substring(0,20) %>...</span>
+                                <a href="/appeal/<%= appeals[i].appealID%>"><button type="button">处理</button></a>
+                            </p>
+                        </li>
+                    <%}%>
+                </ul>
+            </div>
+        </div>
+    </body>
+</html>
+            

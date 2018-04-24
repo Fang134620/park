@@ -1,0 +1,133 @@
+body{
+  text-align: center;
+}
+
+.content{
+  margin: 0 auto;
+  text-align: center;
+  width: 960px;
+}
+
+.top{
+  width: 100%;
+  height: 75px;
+  background-color: gray;
+}
+
+.top-left{
+  width: 85%;
+  float: left;
+  height: 100%;
+  text-align: center;
+}
+
+.top-left h2{
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 30px;
+  color: white;
+  letter-spacing: 30px;
+}
+
+.top-right{  
+  width: 15%;
+  float: left;
+  height: 100%;
+  text-align: center;
+}
+
+.top-right button{
+  margin: 30px 30px;  
+  font-size: 16px;
+  border-radius: 30%; 
+  border: 2px solid white;
+}
+
+button:hover{
+  background: white;
+  color: gray;
+}
+
+.appeal-list{
+  width: 860px;
+  margin-left: 20px;
+  margin-top: 50px;
+}
+
+.appeal{
+  border: solid grey 1px;
+  border-radius: 10pt;
+  margin-top: 10px;
+}
+
+.appeal span{
+  display: inline-block;
+  text-align: left;
+}
+.appeal .appeal-num{
+  width: 30px;
+}
+.appeal .userID{
+  width: 100px;
+}
+.appeal .apContent{
+  width: 500px;
+}
+.appeal button{
+  width: 80px;
+  border-radius: 20%; 
+  border: 1px solid grey;
+}
+ul{
+  list-style: none;
+}
+
+.details{
+  position: absolute;
+  left: 20%;
+  top: 150px;
+}
+.apResult{
+  margin-top: 30px;
+}
+
+table{
+  border-collapse: collapse;
+  width: 750px;
+  text-align: center;
+}
+
+.details table th{
+  border: 1px solid gainsboro; 
+}
+.details table td{
+  border: 1px solid gainsboro; 
+}
+.apText{
+  height:80px;
+}
+
+.submitButton{
+  width: 80px;
+  border-radius: 20%; 
+  border: 1px solid grey;
+}
+
+.submitButton:hover{
+  background: white;
+  color: gray;
+}
+
+.createNotice{
+  position: absolute;
+  left: 30%;
+  top: 120px;
+}
+
+.noticeSubmit{
+  width: 80px;
+  border-radius: 20%; 
+  border: 1px solid grey;
+  position: absolute;
+  left: 45%;
+  top: 500px;
+}
