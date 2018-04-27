@@ -13,7 +13,13 @@ body{
   height: 75px;
   background-color: gray;
 }
-
+.top h1{
+  padding-top: 20px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 30px;
+  color: white;
+  letter-spacing: 30px;
+}
 .top-left{
   width: 85%;
   float: left;
@@ -92,6 +98,7 @@ ul{
 
 table{
   border-collapse: collapse;
+  width:100%;
   width: 750px;
   text-align: center;
 }
@@ -130,4 +137,18 @@ table{
   position: absolute;
   left: 45%;
   top: 500px;
+}
+
+.adminLogin-table{
+  margin-top: 30px;
+  width: 400px;
+  height: 200px;
+}
+
+.adminLogin-button{ 
+  margin-top: 30px; 
+  font-size: 20px;
+  width:100px;
+  border-radius: 30%; 
+  border: 2px solid grey;
 }

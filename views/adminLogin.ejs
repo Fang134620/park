@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-cn">
+    <head>
+        <title>login</title>
+        <link rel="stylesheet" href="/stylesheets/style.css">
+    </head>
+    <body>
+        <div class="content">
+            <div class="top">
+                    <h1>管理员身份验证</h1>
+            </div>
+            <form action="/doAdminLogin" method="POST">
+                <table align="center" class="adminLogin-table">
+                    <tr>
+                        <th><label for="adminName">用户名:</label></th>
+                        <td><input type="text" name="adminName" id="adminName" style="width: 250px"></td>
+                    </tr>
+                    <tr>
+                        <th><label for="password" style="float: right;">密码:</label></th>
+                        <td><input type="text" name="password" id="password" style="width: 250px"></td>
+                    </tr>     
+                </table>
+                <p><h5 style="color: red"><%=message%><h5></p>
+                <button type="submit" class="adminLogin-button">登录</button>
+            </form>
+        </div>
+    </body>
+</html>
+            

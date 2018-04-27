@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-cn">
+    <head>
+        <title>系统数据统计与处理</title>
+        <link rel="stylesheet" href="/stylesheets/style.css">
+    </head>
+    <body>
+        <div class="content">
+            <div class="top">
+                <div class="top-left">
+                    <h2>统计处理</h2>
+                </div>
+                <div class="top-right">
+                    <a href="/admin"><button type="button">返回主页</button></a>
+                </div>
+            </div>
+            <div class="count">
+                <table>
+                    <tr>
+                        <th>总用户量</th>
+                        <td><%= totalUserNum %></td>
+                        <th>已用车单数量</th>
+                        <td><%= endShareNum%></td>
+                        <th>当前可用车单量</th>
+                        <td><%=avaiShareNum%></td>
+                    </tr>
+                    <tr>
+                        <th>当前交易总额</th>
+                        <td><%= totalCost %></td>
+                        <th>本月消费总额</th>
+                        <td><%= monthCost %></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="baduser-list">
+                    <ul>
+                        <% for(var i = 0,max = badusers.length;i<max;i++){%>
+                            <li class="baduser">
+                                <p><span class="baduser-num"><%= i+1%>.</span>
+                                    <span class="userID">用户名：<%= badusers[i].nickname %></span>
+                                    <span class="credit">信誉：<%= badusers[i].credit %></span>
+                                    <a href="/baduser/<%= badusers[i].baduserID%>"><button type="button">处理</button></a>
+                                </p>
+                            </li>
+                        <%}%>
+                    </ul>
+                </div>
+        </div>
+    </body>
+</html>
+            
