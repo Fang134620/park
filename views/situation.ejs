@@ -25,21 +25,22 @@
                         <td><%=avaiShareNum%></td>
                     </tr>
                     <tr>
-                        <th>当前交易总额</th>
+                        <th>所有用户交易总额</th>
                         <td><%= totalCost %></td>
-                        <th>本月消费总额</th>
+                        <th>最近一个月交易额</th>
                         <td><%= monthCost %></td>
                     </tr>
                 </table>
             </div>
-            <div class="baduser-list">
+            <div class="baduserList">
+                <h3>不良信誉用户</h3>
                     <ul>
                         <% for(var i = 0,max = badusers.length;i<max;i++){%>
                             <li class="baduser">
                                 <p><span class="baduser-num"><%= i+1%>.</span>
-                                    <span class="userID">用户名：<%= badusers[i].nickname %></span>
+                                    <span class="userID"><%= badusers[i].nickname %></span>
                                     <span class="credit">信誉：<%= badusers[i].credit %></span>
-                                    <a href="/baduser/<%= badusers[i].baduserID%>"><button type="button">处理</button></a>
+                                    <a href="/baduser/<%= badusers[i].userID%>"><button type="button">处理</button></a>
                                 </p>
                             </li>
                         <%}%>

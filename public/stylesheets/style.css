@@ -21,7 +21,7 @@ body{
   letter-spacing: 30px;
 }
 .top-left{
-  width: 85%;
+  width: 70%;
   float: left;
   height: 100%;
   text-align: center;
@@ -35,15 +35,16 @@ body{
 }
 
 .top-right{  
-  width: 15%;
+  width: 30%;
   float: left;
   height: 100%;
   text-align: center;
 }
 
 .top-right button{
-  margin: 30px 30px;  
-  font-size: 16px;
+  margin-left: 20px;
+  margin-top: 30px; 
+  font-size: 15px;
   border-radius: 30%; 
   border: 2px solid white;
 }
@@ -53,7 +54,7 @@ button:hover{
   color: gray;
 }
 
-.appeal-list{
+.appealList{
   width: 860px;
   margin-left: 20px;
   margin-top: 50px;
@@ -96,7 +97,7 @@ ul{
   margin-top: 30px;
 }
 
-table{
+.details table{
   border-collapse: collapse;
   width:100%;
   width: 750px;
@@ -151,4 +152,89 @@ table{
   width:100px;
   border-radius: 30%; 
   border: 2px solid grey;
+}
+
+.count{
+  margin-top:50px;
+  margin-left: 80px; 
+}
+
+.count table{
+  border-collapse: collapse;
+  font-size: 15px;
+  width: 750px;
+  text-align: center;
+}
+.count table td{
+  color: tomato;
+  font-size: 20px;
+}
+
+.baduserList{
+  width: 600px;
+  text-align: center;
+  margin-left: 180px;
+  margin-top: 50px;
+}
+
+.baduserList ul{
+  margin-left: -50px;
+}
+.baduser{
+  width: 600px;
+  border: solid brown 1px;
+  border-radius: 10pt;
+  margin-top: 10px;
+  text-align: left;
+}
+
+.baduser span{
+  display: inline-block;
+}
+
+.baduser .baduser-num{
+  margin-left:60px;
+  width: 30px;
+}
+.baduser .userID{
+  margin-left:60px;
+  width: 100px;
+}
+.baduser .credit{
+  margin-left: 40px;
+  width: 100px;
+}
+.baduser button{
+  margin-left: 50px;
+  width: 80px;
+  border-radius: 20%; 
+  border: 1px solid chocolate;
+}
+
+.baduser-table{
+  margin-top:100px;
+  height: 150px;
+}
+.do-Button {
+  margin-top: 100px;
+  margin-left: -100px;
+}
+.do-Button button{
+  color: beige;
+  margin-left: 20px;
+  font-size: 20px;
+  width: 80px;
+  border-radius: 20%; 
+  border: 1px solid chocolate;
+}
+.delete{
+  background: red;
+}
+.warning{
+  background: chocolate;
+}
+
+.do-Button button:hover{
+  color: red;
+  background: white;
 }

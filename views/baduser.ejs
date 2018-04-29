@@ -11,10 +11,30 @@
                     <h2>用户详情</h2>
                 </div>
                 <div class="top-right">
-                    <a href="/admin"><button type="button">返回主页</button></a>
+                    <a href="/situation"><button type="button">返回</button></a>
                 </div>
             </div>
-            
+            <div class="count">
+                    <table class="baduser-table">
+                        <tr>
+                            <th>账户余额</th>
+                            <td><%= balance %></td>
+                            <th>已发布车单数量</th>
+                            <td><%= rendNum%></td>
+                            <th>已租用车单量</th>
+                            <td><%=borrowNum%></td>
+                        </tr>
+                        <tr>
+                            <th>发布车位好评率</th>
+                            <td><%= 100*rendRate %>%</td>
+                            <th>租用车位好评率</th>
+                            <td><%= 100*borrowRate%>%</td>
+                        </tr>
+                    </table>
+                    <div class="do-Button">
+                    <a href="/baduser/<%= userID %>/warning"><button type="button" class="warning">警告</button></a>
+                    <a href="/baduser/<%= userID %>/delete"><button type="button" class="delete">封停</button></a>
+                </div>
         </div>
     </body>
 </html>
