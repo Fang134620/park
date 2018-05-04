@@ -28,7 +28,7 @@
                     </tr>
                     <tr>
                             <th>租出者：</th>
-                            <td><%= share.renderName%></td>
+                            <td><a href="/userInfor/<%= share.renderID%>?appealID=<%=appeal.appealID%>"><%= share.renderName%></a></td>
                             <th>信誉：</th>
                             <td><%=share.renderCredit%></td>
                     </tr>
@@ -45,12 +45,10 @@
                         <td colspan="3"><%=share.position%></td>
                     </tr>
                 </table>
-                <form action="/appeal/<%= appeal.appealID%>" method="POST" class="apResult">
+                <form action="/appeal/<%= appeal.appealID%>?userID=<%=appeal.userID%>&shareID=<%=share.shareID%>" method="POST" class="apResult">
                     <p>处理结果：
                         <input name="apResult" type="radio" value="true" checked="checked">通过
                         <input name="apResult" type="radio" value="false">不通过<br><br>
-                        <input type="hidden" name="userID" value="<%= appeal.userID%>">
-                        <input type="hidden" name="shareID" value="<%= share.shareID%>">
                         <input class="submitButton" type="submit" value="提交"></p>    
                 </form>
             </div>

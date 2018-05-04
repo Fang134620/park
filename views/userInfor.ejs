@@ -1,0 +1,38 @@
+<!doctype>
+<html lang="zh-cn">
+    <head>
+        <title>用户详情</title>
+        <link rel="stylesheet" href="/stylesheets/style.css">
+    </head>
+    <body>
+        <div class="content">
+            <div class="top">
+                <div class="top-left">
+                    <h2>用户详情</h2>
+                </div>
+                <div class="top-right">
+                    <a href="/appeal/<%=appealID%>"><button type="button">返回</button></a>
+                </div>
+            </div>
+            <div class="count">
+                    <table class="baduser-table">
+                            <tr>
+                                <th>用户名：</th>
+                                <td><%= nickname%></td>
+                                <th>已发布车单数量</th>
+                                <td><%= rendNum%></td>
+                                <th>已租用车单量</th>
+                                <td><%=borrowNum%></td>
+                            </tr>
+                            <tr>
+                                <th>账户余额:</th>
+                                <td><%= balance %></td>
+                                <th>发布车位好评率:</th>
+                                <td><%= 100*rendRate %>%</td>
+                                <th>租用车位好评率:</th>
+                                <td><%= 100*borrowRate%>%</td>
+                            </tr>
+                    </table>
+        </div>
+    </body>
+</html>

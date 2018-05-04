@@ -17,17 +17,19 @@
             <div class="count">
                     <table class="baduser-table">
                         <tr>
-                            <th>账户余额</th>
-                            <td><%= balance %></td>
+                            <th>用户名：</th>
+                            <td><%= nickname%></td>
                             <th>已发布车单数量</th>
                             <td><%= rendNum%></td>
                             <th>已租用车单量</th>
                             <td><%=borrowNum%></td>
                         </tr>
                         <tr>
-                            <th>发布车位好评率</th>
+                            <th>账户余额:</th>
+                            <td><%= balance %></td>
+                            <th>发布车位好评率:</th>
                             <td><%= 100*rendRate %>%</td>
-                            <th>租用车位好评率</th>
+                            <th>租用车位好评率:</th>
                             <td><%= 100*borrowRate%>%</td>
                         </tr>
                     </table>
