@@ -34,7 +34,7 @@ router.post('/register',function(req,res,next){
   hash.update(password);
   password = hash.digest('hex');
   var query1 = 'select * from user where userName = \"'+userName+'\" or phone = \"'+phone+'\"';
-  var query2 = 'insert into user set userName = '+mysql.escape(userName)+',password = '+mysql.escape(password)+',nickname = \"user'+mysql.escape(userName)+'\",balance = 0,credit = 100,phone = '+phone;
+  var query2 = 'insert into user set userName = '+mysql.escape(userName)+',password = '+mysql.escape(password)+',nickname = \"user'+mysql.escape(userName)+'\",credit = 100,usable = 1,phone = '+phone;
   var query3 = 'select userID,userName,nickname from user where userName = \"'+userName+'\"';
   db.query(query1,function(err,rows,fields){
     if(err)console.log(err);
@@ -63,7 +63,7 @@ router.post('/login',function(req,res,next){
   password = hash.digest('hex');
   function doLogin(){
     return new Promise(function(resolve,reject){
-      var query1 = 'select userID,nickname from user where userName ='+mysql.escape(userName)+' and password = '+mysql.escape(password);
+      var query1 = 'select userID,nickname,usable from user where userName ='+mysql.escape(userName)+' and password = '+mysql.escape(password);
       db.query(query1,function(err,rows,fields){
         if(err)console.log(err);
         resolve(rows[0]);
@@ -84,11 +84,16 @@ router.post('/login',function(req,res,next){
     })
     var dologin = await doLogin();
     if(dologin){
-      req.session.userID = dologin.userID;
-      req.session.userName = userName;
-      req.session.nickname = dologin.nickname;
-      var resulets = await Promise.all(promises);
-      res.json({success:1,message:null}); 
+      if(dologin.usable){
+        req.session.userID = dologin.userID;
+        req.session.userName = userName;
+        req.session.nickname = dologin.nickname;
+        var results = await Promise.all(promises);
+        res.json({success:1,message:null}); 
+      }else{
+        res.json({success:2,message:"用户已被冻结"});
+      }
+      
     }else{
       res.json({success:0,message:'用户名或密码错误'});
     }
@@ -104,36 +109,7 @@ router.get('/logout',function(req,res,next){
   res.json({success:1});
 })
 
-/*大厅*/
-router.get('/',function(req,res,next){
-  var login = false;
-  var query1 = 'select shareID,position,beginTime,endTime,cost from share where state = 0';
-  if(req.session.userID){
-    login = true;
-    var userID = req.session.userID;
-    var query2 = 'select count(*) from message where receiveID = '+userID;
-    var query3 = 'select count(*) from notice';
-    async function funs(){
-      docs = [query1,query2,query3];
-      let promises = docs.map((doc)=>{
-        return new Promise(function(resolve,reject){
-          db.query(doc,function(err,rows,next){
-            resolve(rows);
-          })
-        })   
-      })
-      let results = await Promise.all(promises);
-      var number = results[1][0]["count(*)"]+results[2][0]["count(*)"];
-      res.json({success:1,login:true,shares:results[0],newMsgNum:number})
-    }
-    funs();
-  }else{
-    db.query(query1,function(err,rows,next){
-      if(err) console.log(err);
-      res.json({success:1,login:false,shares:rows});
-    })
-  }
-})
+
 /*搜索结果*/
 router.get('/search',function(req,res,next){
   var positionA = req.query.positionA;
@@ -208,7 +184,7 @@ router.post('/message/:messageID/delete',function(req,res,next){
 
 /*发布车位*/
 router.post('/createShare',function(req,res,next){
-  var renderID = req.session.userID;
+  var borrowerID = req.session.userID;
   var position = req.body.position;
   var positionA = req.body.positionA;
   var positionB = req.body.positionB;
@@ -216,16 +192,20 @@ router.post('/createShare',function(req,res,next){
   var endTime = req.body.endTime;
   var cost = req.body.cost;
   var more = req.body.more;
-  console.log(position,positionA,positionB,beginTime,endTime,renderID,cost,more);
+  console.log(position,positionA,positionB,beginTime,endTime,borrowerID,cost,more);
   var dateStringB = new Date(beginTime);
   var dateStringE = new Date(endTime);
   if(dateStringB=="Invalid Date" || dateStringE =="Invalid Date"){
     res.json({success:0,message:"时间格式错误"});
   }else{
-    var query2 = 'insert into share set renderID = '+renderID+',position = \"'+position+'\",positionA = '+positionA+',positionB ='+positionB+',beginTime =\"'+beginTime+'\",endTime =\"'+endTime+'\",state = 0,stars = -1,cost = '+cost+',more = \"'+more+'\"';
+    var query2 = 'insert into share set borrowerID = '+borrowerID+',position = \"'+position+'\",positionA = '+positionA+',positionB ='+positionB+',beginTime =\"'+beginTime+'\",endTime =\"'+endTime+'\",state = 0,stars = -1,cost = '+cost+',more = \"'+more+'\"';
     db.query(query2,function(err,rows,fields){
-      if(err)console.log(err);
-      res.json({success:1,message:null});
+      if(err){
+        console.log(err);
+        res.json({success:2,message:"发布失败"});
+      }else{
+        res.json({success:1,message:null});
+      }
     })
   }
 })
@@ -234,63 +214,84 @@ router.post('/createShare',function(req,res,next){
 router.get('/share/:shareID',function(req,res,next){
   var shareID = req.params.shareID;
   var userID = req.session.userID;
-  var query1 = 'select shareID,position,beginTime,endTime,state,cost,more,renderID,borrowerID,stars,nickname as renderName,credit from share inner join user on share.renderID = userID where shareID ='+ shareID;
-  db.query(query1,function(err,rows,fields){
-    var share = rows[0];
-    share.beginTimeString = share.beginTime.format("yyyy-MM-dd hh:mm:ss");
-    share.endTimeString = share.endTime.format("yyyy-MM-dd hh:mm:ss");
-    console.log(share);
-    res.json({success:1,share:share});
-  })
+  var share;
+  function getShare(){
+    return new Promise(function(resolve,reject){
+      var query1 = 'select shareID,position,beginTime,endTime,state,cost,more,borrowerID,renterID,stars,nickname as borrowerName,credit,phone as borrowerPhone from share inner join user on share.borrowerID = user.userID where shareID ='+ shareID;
+      db.query(query1,function(err,rows,fields){
+        if(rows[0]){
+          var share = rows[0];
+          share.beginTimeString = share.beginTime.format("yyyy-MM-dd hh:mm:ss");
+          share.endTimeString = share.endTime.format("yyyy-MM-dd hh:mm:ss");
+          share.renterPhone = null;
+          resolve(share);
+        }else{
+          resolve();
+        }
+      })
+    })
+  }
+  function getPhone(){
+    return new Promise(function(resolve,reject){
+      console.log("1111",share);
+      query2 = 'select phone from user where userID = '+share.renterID;
+      db.query(query2,function(err,rows,fields){
+        if(err)console.log(err);
+        share.renterPhone = rows[0].phone;
+        resolve();
+      })
+    })
+  }
+  async function funs(){
+    try{  
+    share = await getShare();
+      if(share){
+        if(share.renterID){
+          await getPhone();
+        } 
+        res.json({success:1,share:share});
+      }else{
+        res.json({success:2,share:null});
+      }
+    }catch(err){
+      console.log(err);
+    }
+  }
+  funs();
 })
 
 /*租用车位*/
 router.post('/share/:shareID/accept',function(req,res,next){
   if(req.session.userID){
     var shareID = req.params.shareID;
-    var borrowerID = req.session.userID;
-    var query1 = 'select balance from user where userID ='+borrowerID;
-    var query2 = 'select renderID,cost,position from share where shareID = '+shareID;
-    function getBalance(){
-      return new Promise(function(resolve,reject){
-        db.query(query1,function(err,rows,fields){
-          console.log(rows);
-          resolve(rows[0]);  
-        })
-      })
-    }
+    var renterID = req.session.userID;
     function getShare(){
       return new Promise(function(resolve,reject){
+        var query2 = 'select borrowerID,position from share where shareID = '+shareID;
         db.query(query2,function(err,rows,fields){
-          console.log(rows);
           resolve(rows[0]);
         })
       })
     }
     async function funs(){
-      let Balance = await getBalance();
       let share = await getShare();
-      var cost = share.cost;
-      var balance = Balance.balance;
-      if(balance>=cost){
-        var renderID = share.renderID;
+      var borrowerID = share.borrowerID;
+      if(borrowerID == renterID){
+        res.json({success:3,message:"不能租用自己的车位"});
+      }else{
         var msgContent = "您位于"+share.position+"的车位已被租用";
-        var query3 = 'update share set borrowerID = '+borrowerID+',state = 1 where shareID ='+shareID;
-        var query4 = 'update user set balance = balance-'+cost+' where userID = '+borrowerID;
-        var query5 = 'insert into message(receiveID,msgTitle,msgContent,sendTime) values('+renderID+',\"系统通知\",\"'+msgContent+'\",NOW())';
-        let docs = [query3,query4,query5];
+        var query3 = 'update share set renterID = '+renterID+',state = 1 where shareID ='+shareID;
+        var query4 = 'insert into message(receiveID,msgTitle,msgContent,sendTime) values('+borrowerID+',\"系统通知\",\"'+msgContent+'\",NOW())';
+        let docs = [query3,query4];
         let promises = docs.map((doc)=>{
           return new Promise(function(resolve,reject){
             db.query(doc,function(err,rows,fields){
-              if(err)console.log(err);
               resolve();
             })
           })
         })
         let results = await Promise.all(promises);
         res.json({success:1,message:null});
-      }else{
-        res.json({success:0,message:"余额不足"});
       }
     }
     funs();
@@ -298,6 +299,7 @@ router.post('/share/:shareID/accept',function(req,res,next){
     res.json({success:2,message:"尚未登录"})
   }
 })
+
 /*取消车位*/
 router.post('/share/:shareID/cancle',function(req,res,next){
   var shareID = req.params.shareID;
@@ -306,11 +308,12 @@ router.post('/share/:shareID/cancle',function(req,res,next){
     res.json({success:1});
   })
 })
+
 /*完成并评价*/
 router.post('/share/:shareID/windup',function(req,res,next){
   var shareID = req.params.shareID;
   var stars = req.body.stars;
-  var query1 = 'select renderID,cost from share where shareID = '+shareID;
+  var query1 = 'select borrowerID from share where shareID = '+shareID;
   function getShare(){
     return new Promise(function(resolve,reject){
       db.query(query1,function(err,rows,fields){
@@ -320,22 +323,21 @@ router.post('/share/:shareID/windup',function(req,res,next){
   }
   async function funs(){
     var share = await getShare();
-    var cost = share.cost;
-    var renderID = share.renderID;
+    var borrowerID = share.borrowerID;
     var userID = req.session.userID;
     var docs;
     var msgContent = "您的车单已被结束租用，最终评分为："+stars+"星。";
     var query1 = 'update user set credit = credit*1.05 where userID ='+userID;
+    var query2 = 'update user set credit = credit*(0.8 +'+ stars+'/10) where userID ='+ borrowerID;
     var query5 = 'update user set credit = credit*0.95 where userID ='+userID;
-    var query2 = 'update user set balance = balance +'+cost+',credit = credit*('+(0.4+stars/5)+') where userID = '+renderID;
     var query3 = 'update share set state =2,stars = '+stars+' where shareID = '+shareID;
-    var query4 = 'insert into message(receiveID,msgTitle,msgContent,sendTime) values('+renderID+',\"系统通知\",\"'+msgContent+'\",NOW())';
+    var query4 = 'insert into message(receiveID,msgTitle,msgContent,sendTime) values('+borrowerID+',\"系统通知\",\"'+msgContent+'\",NOW())';
     if(stars>2){
       docs = [query1,query2,query3,query4];
     }else if(stars == 1){
       docs = [query5,query2,query3,query4];
     }else{
-      docs = [query2,query3,query4];
+      docs = [query3,query4];
     }
     let promises = docs.map((doc)=>{
       return new Promise(function(resolve,reject){
@@ -360,8 +362,9 @@ router.post('/share/:shareID/appeal',function(req,res,next){
   var shareID = req.params.shareID;
   var userID = req.session.userID;
   var apContent = req.body.apContent;
-  var query = 'insert into appeal(userID,shareID,apContent,apState) values('+userID+','+shareID+','+apContent+',false)';
+  var query = 'insert into appeal(userID,shareID,apContent,apState) values('+userID+','+shareID+',\"'+apContent+'\",false)';
   db.query(query,function(err,rows,fields){
+    if(err)console.log(err);
     res.json({success:1});
   })
 })
@@ -381,10 +384,10 @@ router.get('/userCenter',function(req,res,next){
 })
 
 /*已发布车位*/
-router.get('/rended',function(req,res,next){
+router.get('/borrowed',function(req,res,next){
   if(req.session.userID){
     var userID = req.session.userID;
-    var query = 'select * from share where renderID ='+userID+' order by beginTime';
+    var query = 'select * from share where borrowerID ='+userID+' order by beginTime';
     db.query(query,function(err,rows,fields){
       var shares = rows;
       shares.map((share) => {
@@ -401,11 +404,11 @@ router.get('/rended',function(req,res,next){
 })
 
 /*已租用车位*/
-router.get('/borrowed',function(req,res,next){
+router.get('/rented',function(req,res,next){
   if(req.session.userID){
     var userID = req.session.userID;
-    var query = 'select * from share where borrowerID ='+userID+' order by beginTime';
-    db.query(query,function(err,rows,fields){
+    var query1 = 'select shareID,position,beginTime,endTime,state,cost,more,borrowerID,stars,nickname as borrowerName,credit,phone as borrowerPhone from share inner join user on share.borrowerID = user.userID where renterID ='+userID+' order by beginTime';
+    db.query(query1,function(err,rows,fields){
       if(err)console.log(err);
       var shares = rows;
       shares.map((share) => {
@@ -414,6 +417,7 @@ router.get('/borrowed',function(req,res,next){
       shares.map((share) => {
         share.endTimeString = share.endTime.format("yyyy-MM-dd hh:mm:ss");
       })
+      console.log(shares);
       res.json({success:1,message:null,shares:shares});
     })
   }else{
@@ -424,15 +428,25 @@ router.get('/borrowed',function(req,res,next){
 /*修改资料*/
 router.post('/userCenter/modify',function(req,res,next){
   var userID = req.session.userID;
-  var newPassword = req.body.newPassword;
-  var newPhone = req.body.newPhone;
-  var hash = crypto.createHash('md5');
-  hash.update(newPassword);
-  newPassword = hash.digest('hex');
-  var newNickname = req.body.newNickname;
-  var query = 'update user set password = '+mysql.escape(newPassword)+',nicename = '+mysql.escape(newNickname)+',phone = '+mysql.escape(newPhone);
-  db.query(query,function(err,rows,fields){
-    res.json({success:1});
+  var query1 = 'select nickname,password,phone from user where userID = '+userID;
+  db.query(query1,function(err,rows,fields){
+    var newNickname = rows[0].nickname;
+    var newPassword = rows[0].password;
+    var newPhone = rows[0].phone;
+    if(req.body.newNickname) newNickname = req.body.newNickname;
+    if(req.body.newPassword){
+      newPassword = req.body.newPassword;
+      var hash = crypto.createHash('md5');
+      hash.update(newPassword);
+      newPassword = hash.digest('hex');
+    } 
+    if(req.body.newPhone) newPhone = req.body.newPhone;
+    console.log(newNickname,newPassword,newPhone);
+    var query2 = 'update user set password = '+mysql.escape(newPassword)+',nickname = '+mysql.escape(newNickname)+',phone = '+mysql.escape(newPhone)+'where userID ='+userID;
+    db.query(query2,function(err,rows,fields){
+      if(err)console.log(err);
+      res.json({success:1});
+    })
   })
 })
 
@@ -457,28 +471,33 @@ router.get('/appeal/:appealID',function(req,res,next){
     var appealID = req.params.appealID;
     var query1 = 'select * from appeal where appealID ='+appealID;
     db.query(query1,function(err,rows,fields){
+      console.log(rows[0])
       var appeal = rows[0];
-      var query2 = 'select shareID,position,beginTime,endTime,cost,renderID,borrowerID,nickname as renderName,credit as renderCredit from share inner join user on share.renderID = user.userID where shareID ='+ appeal.shareID;
+      var query2 = 'select shareID,position,beginTime,endTime,cost,borrowerID,renterID,nickname as borrowerName,credit as borrowerCredit from share inner join user on share.borrowerID = user.userID where shareID ='+ appeal.shareID;
       db.query(query2,function(err,rows,fields){
+        share = rows[0];
+        share.beginTimeString = share.beginTime.format("yyyy-MM-dd hh:mm:ss");
+        share.endTimeString = share.endTime.format("yyyy-MM-dd hh:mm:ss");
         res.render('appeal',{success:1,appeal:appeal,share:rows[0]})
       })
     })
   }
 })
 
+/*用户详情*/
 router.get('/userInfor/:userID',function(req,res,next){
   if(!req.session.adminLogin){
     res.redirect('/adminLogin');
   }else{
     var userID = req.params.userID;
-    var appealID = req.query.appealID;
+    var appealID = req.query.appealID;  
     async function funs(){
-      var query1 = 'select nickname,balance from user where userID = '+userID;
-      var query2 = 'select count(*) from share where renderID = '+userID;
-      var query3 = 'select count(*) from share where borrowerID = '+userID;
-      var query4 = 'select count(*) from share where stars >3 and renderID = '+userID;
-      var query5 = 'select count(*) from share where stars >3 and borrowerID = '+userID;
-      var query6 = 'select * from share where renderID = '+ userID+' or borrowerID ='+userID;
+      var query1 = 'select nickname,phone from user where userID = '+userID;
+      var query2 = 'select count(*) from share where borrowerID = '+userID;
+      var query3 = 'select count(*) from share where renterID = '+userID;
+      var query4 = 'select count(*) from share where stars >3 and borrowerID = '+userID;
+      var query5 = 'select count(*) from share where stars >3 and renterID = '+userID;
+      var query6 = 'select * from share where borrowerID = '+ userID+' or renterID ='+userID;
       let docs = [query1,query2,query3,query4,query5,query6];
       let promises = docs.map((doc)=>{
         return new Promise(function(resolve,reject){
@@ -488,18 +507,18 @@ router.get('/userInfor/:userID',function(req,res,next){
           })
         })
       })
-      var resulets = await Promise.all(promises);
-      if(resulets[1][0]["count(*)"] == 0){
-        rendRate = 0;
-      }else{
-        rendRate = resulets[3][0]["count(*)"]/resulets[1][0]["count(*)"];
-      }
-      if(resulets[2][0]["count(*)"] == 0){
+      var results = await Promise.all(promises);
+      if(results[1][0]["count(*)"] == 0){
         borrowRate = 0;
       }else{
-        borrowRate = resulets[4][0]["count(*)"]/resulets[2][0]["count(*)"];
+        borrowRate = results[3][0]["count(*)"]/results[1][0]["count(*)"];
       }
-      res.render('userInfor',{appealID:appealID,userID:userID,nickname:resulets[0][0].nickname,balance:resulets[0][0].balance,rendNum:resulets[1][0]["count(*)"],borrowNum:resulets[2][0]["count(*)"],rendRate:rendRate,borrowRate:borrowRate,shares:resulets[5]});
+      if(results[2][0]["count(*)"] == 0){
+        rentRate = 0;
+      }else{
+        rentRate = results[4][0]["count(*)"]/results[2][0]["count(*)"];
+      }
+      res.render('userInfor',{appealID:appealID,userID:userID,nickname:results[0][0].nickname,phone:results[0][0].phone,borrowNum:results[1][0]["count(*)"],rentNum:results[2][0]["count(*)"],borrowRate:borrowRate,rentRate:rentRate,shares:results[5]});
     }
     funs();
 
@@ -514,11 +533,11 @@ router.post('/appeal/:appealID',function(req,res,next){
     var apResult = req.body.apResult;
     var appealID = req.params.appealID;
     var shareID = req.query.shareID;
-    var borrowerID = req.query.userID;
-    console.log(shareID,borrowerID);
+    var renterID = req.query.userID;
+    console.log("apresult",apResult);
     if(apResult){
-      console.log(apResult,appealID,shareID,borrowerID);
-      var query2 = 'select renderID,cost,position from share where shareID = '+shareID;
+      console.log(apResult,appealID,shareID,renterID);
+      var query2 = 'select borrowerID,position from share where shareID = '+shareID;
       function getShare(){
         return new Promise(function(resolve,reject){
           db.query(query2,function(err,rows,fields){
@@ -527,22 +546,19 @@ router.post('/appeal/:appealID',function(req,res,next){
           })
         }) 
       }
-
       async function funs(){
         let share = await getShare();
         console.log(share);
-        var renderID = share.renderID;
-        var cost = share.cost;
+        var borrowerID = share.borrowerID;
         var position = share.position;
-        var renderMsgContent = "您好，您发布的位于"+position+"的车位因用户申诉被取消，费用已被退回";
-        var borrowerMsgContent = "您好，您对位于"+position+"的车位使用申诉已通过，费用已退回至您的账户";
+        var borrowerMsgContent = "您好，您发布的位于"+position+"的车位因用户申诉被取消";
+        var renterMsgContent = "您好，您对位于"+position+"的车位使用申诉已通过";
         var query3 = 'update share set state = 3 where shareID ='+shareID;
-        var query4 = 'update user set balance = balance - '+cost+',credit = credit*0.5 where userID = '+renderID;
-        var query5 = 'update user set balance = balance + '+cost+' where userID = '+borrowerID;
-        var query6 = 'insert into message(receiveID,msgTitle,msgContent,sendTime) values('+renderID+',\"系统通知\",\"'+renderMsgContent+'\",NOW())';
-        var query7 = 'insert into message(receiveID,msgTitle,msgContent,sendTime) values('+borrowerID+',\"系统通知\",\"'+borrowerMsgContent+'\",NOW())';
+        var query4 = 'update user set credit = credit*0.4 where userID = '+borrowerID;
+        var query6 = 'insert into message(receiveID,msgTitle,msgContent,sendTime) values('+borrowerID+',\"系统通知\",\"'+borrowerMsgContent+'\",NOW())';
+        var query7 = 'insert into message(receiveID,msgTitle,msgContent,sendTime) values('+renterID+',\"系统通知\",\"'+renterMsgContent+'\",NOW())';
         var query8 = 'update appeal set apResult = true,apState = true where appealID = '+appealID;
-        let docs = [query3,query4,query5,query6,query7,query8];
+        let docs = [query3,query4,query6,query7,query8];
         let promises = docs.map((doc)=>{
           return new Promise(function(resolve,reject){
             db.query(doc,function(err,rows,fields){
@@ -551,7 +567,7 @@ router.post('/appeal/:appealID',function(req,res,next){
             })
           })
         })
-        let resulets = await Promise.all(promises);
+        let results = await Promise.all(promises);
         res.redirect('/admin');
       }
       funs();
@@ -559,7 +575,7 @@ router.post('/appeal/:appealID',function(req,res,next){
       async function funs(){
         var msgContent = "您好，您的申诉被驳回";
         var query1 = 'update appeal set apState = true,apResult = false where appealID = '+appealID;
-        var query2 = 'insert into message(receiveID,msgTitle,msgContent,sendTime) values('+borrowerID+',\"系统通知\",\"'+msgContent+'\",NOW())';
+        var query2 = 'insert into message(receiveID,msgTitle,msgContent,sendTime) values('+renterID+',\"系统通知\",\"'+msgContent+'\",NOW())';
         let docs = [query1,query2];
         let promises = docs.map((doc)=>{
           return new Promise(function(resolve,reject){
@@ -569,7 +585,7 @@ router.post('/appeal/:appealID',function(req,res,next){
             })
           })
         })
-        let resulets = await Promise.all(promises);
+        let results = await Promise.all(promises);
         res.redirect('/admin')
       }
       funs();
@@ -624,9 +640,9 @@ router.get('/situation',function(req,res,next){
           })
         })
       })
-      var resulets = await Promise.all(promises);
-      console.log(resulets);
-      res.render('situation',{totalUserNum:resulets[0][0]["count(*)"],endShareNum:resulets[1][0]["count(*)"],avaiShareNum:resulets[2][0]["count(*)"],totalCost:resulets[3][0]["sum(cost)"],monthCost:resulets[4][0]["sum(cost)"],badusers:resulets[5]});
+      var results = await Promise.all(promises);
+      console.log(results);
+      res.render('situation',{totalUserNum:results[0][0]["count(*)"],endShareNum:results[1][0]["count(*)"],avaiShareNum:results[2][0]["count(*)"],totalCost:results[3][0]["sum(cost)"],monthCost:results[4][0]["sum(cost)"],badusers:results[5]});
     }
     funs();
   }
@@ -639,11 +655,11 @@ router.get('/baduser/:baduserID',function(req,res,next){
   }else{
     var userID = req.params.baduserID;
     async function funs(){
-      var query1 = 'select nickname,balance from user where userID = '+userID;
-      var query2 = 'select count(*) from share where renderID = '+userID;
-      var query3 = 'select count(*) from share where borrowerID = '+userID;
-      var query4 = 'select count(*) from share where stars >3 and renderID = '+userID;
-      var query5 = 'select count(*) from share where stars >3 and borrowerID = '+userID;
+      var query1 = 'select nickname,phone from user where userID = '+userID;
+      var query2 = 'select count(*) from share where borrowerID = '+userID;
+      var query3 = 'select count(*) from share where renterID = '+userID;
+      var query4 = 'select count(*) from share where stars >3 and borrowerID = '+userID;
+      var query5 = 'select count(*) from share where stars >3 and renterID = '+userID;
       let docs = [query1,query2,query3,query4,query5];
       let promises = docs.map((doc)=>{
         return new Promise(function(resolve,reject){
@@ -653,18 +669,18 @@ router.get('/baduser/:baduserID',function(req,res,next){
           })
         })
       })
-      var resulets = await Promise.all(promises);
-      if(resulets[1][0]["count(*)"] == 0){
-        rendRate = 0;
-      }else{
-        rendRate = resulets[3][0]["count(*)"]/resulets[1][0]["count(*)"];
-      }
-      if(resulets[2][0]["count(*)"] == 0){
+      var results = await Promise.all(promises);
+      if(results[1][0]["count(*)"] == 0){
         borrowRate = 0;
       }else{
-        borrowRate = resulets[4][0]["count(*)"]/resulets[2][0]["count(*)"];
+        borrowRate = results[3][0]["count(*)"]/results[1][0]["count(*)"];
       }
-      res.render('baduser',{userID:userID,nickname:resulets[0][0].nickname,balance:resulets[0][0].balance,rendNum:resulets[1][0]["count(*)"],borrowNum:resulets[2][0]["count(*)"],rendRate:rendRate,borrowRate:borrowRate});
+      if(results[2][0]["count(*)"] == 0){
+        rentRate = 0;
+      }else{
+        rentRate = results[4][0]["count(*)"]/results[2][0]["count(*)"];
+      }
+      res.render('baduser',{userID:userID,nickname:results[0][0].nickname,phone:results[0][0].phone,borrowNum:results[1][0]["count(*)"],rentNum:results[2][0]["count(*)"],borrowRate:borrowRate,rentRate:rentRate});
     }
     funs();
   }
@@ -685,12 +701,12 @@ router.get('/baduser/:userID/warning',function(req,res,next){
 })
 
 /*封停用户*/
-router.get('/baduser/:userID/delete',function(req,res,next){
+router.get('/baduser/:userID/freeze',function(req,res,next){
   if(!req.session.adminLogin){
     res.redirect('/adminLogin');
   }else{
     var userID = req.params.userID;
-    var query = 'delete from user where userID = '+userID;
+    var query = 'update user set usable = 0 where userID = '+userID;
     db.query(query,function(err,rows,fields){
       res.redirect('/situation');
     })

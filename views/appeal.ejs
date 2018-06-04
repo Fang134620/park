@@ -28,17 +28,17 @@
                     </tr>
                     <tr>
                             <th>租出者：</th>
-                            <td><a href="/userInfor/<%= share.renderID%>?appealID=<%=appeal.appealID%>"><%= share.renderName%></a></td>
+                            <td><a href="/userInfor/<%= share.borrowerID%>?appealID=<%=appeal.appealID%>"><%= share.borrowerName%></a></td>
                             <th>信誉：</th>
-                            <td><%=share.renderCredit%></td>
+                            <td><%=share.borrowerCredit%></td>
                     </tr>
                     <tr>
                         <th>开始时间：</th>
-                        <td colspan="3"><%=share.beginTime%></td>
+                        <td colspan="3"><%=share.beginTimeString%></td>
                     </tr>
                     <tr>
                             <th>结束时间：</th>
-                            <td colspan="3"><%=share.endTime%></td>
+                            <td colspan="3"><%=share.endTimeString%></td>
                     </tr>
                     <tr>
                         <th>位置信息：</th>
